@@ -1,12 +1,17 @@
-"""Lightweight Slack agent shim for local testing."""
+from langchain.agents import create_agent
+from langchain.chat_models import init_chat_model
+from tools.slack_tools import search_slack_messages, send_slack_message, get_thread_replies
+from config.settings import settings
 
-from typing import Any, Dict
 
+model = init_chat_model(settings.SLACK_BOT_TOKEN)
 
-def invoke(payload: Dict[str, Any]) -> Dict[str, Any]:
-    messages = payload.get("message", [])
-    content = ""
-    if messages:
-        last = messages[-1]
-        content = last.get("content") if isinstance(last, dict) else getattr(last, "content", "")
-    return {"message": [type("M", (), {"content": f"Slack result for: {content}"})()]}
+slack_agent = create_agent(
+    model,
+    tools=[search_slack_messages, send_slack_message, get_thread_replies],
+    system_prompt=(
+        "You are a slack assistant agent. Answer questions about Slack channels and messages."
+        "relevant thread and discussions where team members have participated."
+        "share information from Slack channels using the provided tools."
+    )
+)
