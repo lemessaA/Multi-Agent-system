@@ -1,19 +1,26 @@
 import os
 from dotenv import load_dotenv
-from workflow.graph import OrchestratorGraph
+from workflow.graph import workflow
 
 # Load environment variables
 load_dotenv()
 
 def main():
     # Initialize the orchestrator
-    orchestrator = OrchestratorGraph()
+    orchestrator = workflow
     
     # Example query
     query = "How do I authenticate API requests?"
     
-    # Run the workflow
-    result = orchestrator.invoke(query)
+    # Run the workflow with an initial RouterState dict
+    initial_state = {
+        "query": query,
+        "classifications": [],
+        "results": [],
+        "final_answer": "",
+    }
+
+    result = orchestrator.invoke(initial_state)
     
     print(f"Query: {query}")
     print(f"\nFinal Answer:\n{result['final_answer']}")

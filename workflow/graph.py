@@ -27,3 +27,21 @@ workflow = (
     .add_edge("synthesize", END)
     .compile()
 )
+
+# Backwards-compatible alias: some callers import `OrchestratorGraph` from this module.
+class OrchestratorGraph:
+    """Backward-compatible wrapper for older callers that expect to
+    instantiate an orchestrator class. This provides an `invoke` method
+    that delegates to the compiled `workflow` object exported above.
+    """
+
+    def __init__(self):
+        self._workflow = workflow
+
+    def invoke(self, *args, **kwargs):
+        return self._workflow.invoke(*args, **kwargs)
+
+
+# Preserve the ready-to-run compiled workflow as `workflow` and also expose it
+# under a conservative name for callers that expect an instance-like object.
+Orchestrator = workflow

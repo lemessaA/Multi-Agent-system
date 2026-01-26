@@ -1,18 +1,42 @@
-from langchain.agents import create_agent
-from langchain.chat_models import init_chat_model
+from langchain.agents import initialize_agent, AgentType
+from langchain.chat_models import ChatOpenAI
 from tools.notion_tools import search_notion, get_notion_page
-from config.settings import settings
+
+def build_notion_agent():
+    llm = ChatOpenAI(
+        temperature=0,
+        model="gpt-4o-mini"
+    )
+
+    tools = [search_notion, get_notion_page]
+
+    agent = initialize_agent(
+        tools=tools,
+        llm=llm,
+        agent=AgentType.OPENAI_FUNCTIONS,
+        verbose=True,
+        system_message=(
+            "You are a Notion workspace assistant. "
+            "Search pages and retrieve content only using tools. "
+            "Never invent Notion data."
+        ),
+    )
+
+    return agent
+class _LocalAgent:
+    def __init__(self, name: str):
+        self.name = name
+
+    def run(self, query: str):
+        from utils.llm import agent_llm
+        return str(agent_llm.invoke([{"role": "user", "content": query}]))
 
 
-model = init_chat_model(settings.NOTION_TOKEN)
+def build_notion_agent_safe():
+    try:
+        return build_notion_agent()
+    except Exception:
+        return _LocalAgent("notion")
 
-notion_agent = create_agent(
-    model=model,
-    tools=[search_notion, get_notion_page],
-    system_prompt=(
-        "You are a Notion expert. Answer questions about Notion pages and content."
-        "process, policies, and documentation by  searching Notion workspaces and pages."
-        "the organizaton's Notion workspace using the provided tools."
-    ),
-    verbose=True,
-)
+
+notion_agent = build_notion_agent_safe()
